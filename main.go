@@ -10,9 +10,11 @@ import (
 	"strconv"
 )
 
+const defaultListenPort = 8080
+
 func main() {
 	port := getListenPort()
-	fmt.Printf("Starting HTTP server on %d", port)
+	fmt.Printf("Starting HTTP server on %d\n", port)
 
 	http.HandleFunc("/", stanRequestHandler)
 
@@ -22,7 +24,7 @@ func main() {
 func getListenPort() int {
 	envPort := os.Getenv("PORT")
 	if envPort == "" {
-		return 8080
+		return defaultListenPort
 	}
 
 	port, _ := strconv.Atoi(os.Getenv("PORT"))
@@ -45,16 +47,18 @@ func stanRequestHandler(rw http.ResponseWriter, req *http.Request) {
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Printf("Error reading request body: %s", err.Error())
-		rw.WriteHeader(http.StatusInternalServerError)
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	// Everything beyond here should return a JSON payload.
+	rw.Header().Set("Content-Type", "application/json")
 
 	// Stan's custom error payload
 	stanRequest, err := parseRequest(body)
 	if err != nil {
 		log.Printf("Error parsing JSON: %s", err.Error())
-		rw.WriteHeader(http.StatusBadRequest)
-		rw.Write([]byte(errorResponse))
+		http.Error(rw, errorResponse, http.StatusBadRequest)
 		return
 	}
 
