@@ -55,6 +55,7 @@ func stanRequestHandler(rw http.ResponseWriter, req *http.Request) {
 		log.Printf("Error parsing JSON: %s", err.Error())
 		rw.WriteHeader(http.StatusBadRequest)
 		rw.Write([]byte(errorResponse))
+		return
 	}
 
 	// filter the request down to just those that meet the criteria test functions
