@@ -44,6 +44,8 @@ func hasEpisodes(p payload) bool {
 // fairly large request handler, should be broken up if it were any
 // larger (in terms of logical steps)
 func stanRequestHandler(rw http.ResponseWriter, req *http.Request) {
+	log.Printf("Received request to %s\n", req.URL)
+
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Printf("Error reading request body: %s", err.Error())
@@ -58,7 +60,9 @@ func stanRequestHandler(rw http.ResponseWriter, req *http.Request) {
 	stanRequest, err := parseRequest(body)
 	if err != nil {
 		log.Printf("Error parsing JSON: %s", err.Error())
-		http.Error(rw, errorResponse, http.StatusBadRequest)
+		// can't use http.Error() here as it overwrites the Content-Type header
+		rw.WriteHeader(http.StatusBadRequest)
+		rw.Write([]byte(errorResponse))
 		return
 	}
 
