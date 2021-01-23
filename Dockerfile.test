@@ -1,0 +1,6 @@
+FROM golang:alpine
+WORKDIR /build
+COPY *.go /build/
+COPY test_fixtures /build/test_fixtures/
+ENV CGO_ENABLED 0
+ENTRYPOINT ["go", "test", "-v"]

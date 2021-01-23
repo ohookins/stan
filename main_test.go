@@ -1,19 +1,27 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"testing"
 )
 
 func Test_ParseJson(t *testing.T) {
-	document, _ := ioutil.ReadFile("test_fixtures/request_payload.json")
-	_, err := parseRequest(document)
+	document, err := ioutil.ReadFile("test_fixtures/request_payload.json")
+	if err != nil {
+		t.Fatal("could not read test fixture")
+	}
+
+	_, err = parseRequest(document)
 	if err != nil {
 		t.Fatal("expected valid document to parse but it did not")
 	}
 
-	document, _ = ioutil.ReadFile("test_fixtures/empty_request.json")
+	document, err = ioutil.ReadFile("test_fixtures/empty_request.json")
+	if err != nil {
+		t.Fatal("could not read test fixture")
+	}
 	_, err = parseRequest(document)
 	if err == nil {
 		t.Fatal("expected empty document to fail but it did not")
@@ -106,5 +114,32 @@ func Test_TransformPayload(t *testing.T) {
 
 	if err := deepCompareResponses(badResponseWrapper, respW); err == nil {
 		t.Fatalf("responses matched but were not the same")
+	}
+}
+
+func Test_EndToEnd(t *testing.T) {
+	// grab the corresponding response document for the request fixture
+	responseFixtureJSON, err := ioutil.ReadFile("test_fixtures/response_payload.json")
+	if err != nil {
+		t.Fatal("could not read test fixture")
+	}
+	var responseFixture responseWrapper
+	json.Unmarshal(responseFixtureJSON, &responseFixture)
+
+	// grab the request fixture and parse it
+	requestFixture, err := ioutil.ReadFile("test_fixtures/request_payload.json")
+	if err != nil {
+		t.Fatal("could not read test fixture")
+	}
+	req, _ := parseRequest(requestFixture)
+
+	// filter for the code challenge's required test predicates and transform
+	// to the required output format
+	filtered := filterRequest(req, []func(payload) bool{hasDRM, hasEpisodes})
+	response := transformPayload(filtered)
+
+	// the generated response and the test fixture should match exactly
+	if err := deepCompareResponses(responseFixture, response); err != nil {
+		t.Fatalf("generated response did not match response test fixture:\n %s", err.Error())
 	}
 }
