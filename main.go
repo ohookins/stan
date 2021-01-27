@@ -52,6 +52,7 @@ func stanRequestHandler(rw http.ResponseWriter, req *http.Request) {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	defer req.Body.Close()
 
 	// Everything beyond here should return a JSON payload.
 	rw.Header().Set("Content-Type", "application/json")
